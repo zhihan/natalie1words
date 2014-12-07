@@ -12,22 +12,42 @@ var main = (function(){
     var storage_name = "try"; 
     var data; // All data from the local storage
 
+    // The data consists of a record field, which is an
+    // array consisting of dates and words.
+
     var words = []; // The words to display
     var today = []; // Words of today
     var edit_buffer = "";
+    var known = []; 
+
+    function count() {
+        var i, total;
+        total = 0;
+        for (i = 0; i < data.record.length; i += 1) {
+            total += data.record[i].words.length;
+        }
+        return total;
+    }
 
     function today() {
-        var now = Date.now();
-        return String(now.getFullYear()) + 
-            String(now.getMonth()) + String(now.getDate());
+        var now = new Date(Date.now());
+        var t = new Date(now.getFullYear(), now.getMonth(),
+                         now.getDate());
+
+        return t.dateString();
     }
 
     function reset() {
+        var = i;
         words = [];
         today = data[today()];
         if (!today) {
             today = []; 
         }
+        for (i = 0; i < data.record.length; i += 1) {
+            known.push.apply(data.record[i].words);
+        }
+        
     }
 
     function goto_screen(screen) {
@@ -113,4 +133,18 @@ var main = (function(){
         goto_about();
         $('.row-offcanvas').removeClass('active');
     });
+
+
+    
+
+    // Initialization
+    function initialize() {
+        var d1 = {date: Date.parse("10 01 2014");
+        
+    }
+
+
+
+})
+
 })();
