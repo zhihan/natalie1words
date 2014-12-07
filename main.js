@@ -29,25 +29,42 @@ var main = (function(){
         return total;
     }
 
-    function today() {
+    function today_str() {
         var now = new Date(Date.now());
         var t = new Date(now.getFullYear(), now.getMonth(),
                          now.getDate());
 
-        return t.dateString();
+        return t.toDateString();
     }
 
     function reset() {
-        var = i;
+        var i, today_rec;
         words = [];
-        today = data[today()];
-        if (!today) {
-            today = []; 
+
+        // Load today from the records
+        var str = today_str();
+        for (i =0; i < data.record.length; i +=1) {
+            if (data.record[i].date === str) {
+                today_rec = data.record[i];
+                break;
+            }
         }
+        
+        if (today_rec) {
+            today = today_rec.words;
+            edit_buffer = today.join("\n");
+        } else {
+            today = [];
+        }
+        
         for (i = 0; i < data.record.length; i += 1) {
             known.push.apply(data.record[i].words);
         }
-        
+    }
+
+    function compute_stats() {
+        var total = count();
+        $("#stats").text("You have learnt " + total + " words," + " today you are learning " + today.length + " words.");
     }
 
     function goto_screen(screen) {
@@ -81,9 +98,9 @@ var main = (function(){
     }
     
     function goto_editor() {
+        refresh_textarea();
         goto_screen("#editor");
         toggle_offcanvas();
-        refresh_textarea(words);
     }
     
     function goto_slideshow(option) {
@@ -96,55 +113,90 @@ var main = (function(){
     }
 
     function goto_stats() {
+        compute_stats();
+    
         goto_screen("#stats");
         toggle_offcanvas();
     }
     
-    function refresh_textarea(l) {
-        $("#edit_input").val(l.join("\n"));
+    function refresh_textarea() {
+        $("#edit_input").val(edit_buffer);
     }
 
     function store() {
-        var serialized = JSON.stringify(data);
-        chrome.storage.sync.set(storage_name, serialized);
+        var obj = {};
+        obj[storage_name] = data.record;
+        chrome.storage.sync.set(obj);
     }
 
     function load() {
-        var serialized = chrome.storage.get(storage_name);
-        data = JSON.parse(data);
+        chrome.storage.sync.get(storage_name,
+                                function(o) {
+                                    data = {record: o[storage_name]};
+                                    reset();
+                                });
+    }
+
+    function get_words(text) {
+        var sep = /\s/;
+        var r =text.split(sep);
+        return r.filter(function isempty(s) {
+            return s !== "";
+        });
     }
     
     function edit_change_callback() {
-        var sep = /\s/; 
+        var sep = /\s/;
+        var today_idx = -1;
+        var i;
         edit_buffer = $("#edit_input").val();
-        today = edit_buffer.split(sep);
+        today = get_words(edit_buffer);
+
+        // Save today's words
+        var str = today_str();
+        for (i = 0; i < data.record.length; i +=1) {
+            if (data.record[i].date === str) {
+                today_idx = i;
+                break;
+            }
+        }
+        
+        if (today_idx === -1) {
+            data.record.push({
+                words:today,
+                date:str
+            });
+        } else {
+            data.record[today_idx] = {
+                words: today,
+                date: str
+            };
+        }
+        store();
     }
 
 
     $(document).ready(function() {
         $("#nav_about").click(goto_about);
+        $("#nav_stats").click(goto_stats);
         $("#nav_editor").click(goto_editor);
         $("#nav_today").click(function() { 
             goto_slideshow("today")
         });
 
         $("#edit_input").change(edit_change_callback);
-        
+
+        load();
         goto_about();
         $('.row-offcanvas').removeClass('active');
     });
 
-
-    
-
     // Initialization
     function initialize() {
-        var d1 = {date: Date.parse("10 01 2014");
-        
+        // Assume that init_data is available in the
+        // global scope.
+        data = {record: init_data };
+        store();
     }
-
-
-
-})
 
 })();
